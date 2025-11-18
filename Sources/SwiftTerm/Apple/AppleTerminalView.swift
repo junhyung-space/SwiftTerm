@@ -717,9 +717,11 @@ extension TerminalView {
                     }
                     #endif
 
-                    if col + runGlyphsCount >= terminal.cols {
-                        size.width += frame.width - size.width
-                    }
+                    // Removed: Don't extend last column background to frame edge
+                    // This was causing colored vertical lines on the right margin
+                    // if col + runGlyphsCount >= terminal.cols {
+                    //     size.width += frame.width - size.width
+                    // }
                     
                     let rect = CGRect (origin: origin, size: size)
                     #if os(macOS)
@@ -783,6 +785,15 @@ extension TerminalView {
         if dirtyRect.intersects(box) {
             nativeBackgroundColor.setFill()
             context.fill ([box])
+        }
+
+        // Fills right margin with the default terminal background
+        // This prevents colored vertical lines when terminal width doesn't align perfectly with cell width
+        let rightMarginX = CGFloat(terminal.cols) * cellDimension.width
+        let rightMargin = CGRect(x: rightMarginX, y: 0, width: bounds.width - rightMarginX, height: bounds.height)
+        if rightMargin.width > 0 && dirtyRect.intersects(rightMargin) {
+            nativeBackgroundColor.setFill()
+            context.fill([rightMargin])
         }
 #elseif false
         // Currently the caller on iOS is clearing the entire dirty region due to the ordering of

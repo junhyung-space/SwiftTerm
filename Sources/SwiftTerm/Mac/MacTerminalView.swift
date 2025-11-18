@@ -96,7 +96,6 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
     public var terminal: Terminal!
 
     var selection: SelectionService!
-    private var scroller: NSScroller!
     
     // Attribute dictionary, maps a console attribute (color, flags) to the corresponding dictionary
     // of attributes for an NSAttributedString
@@ -275,49 +274,9 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
         window?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 1
     }
     
-    @objc
-    func scrollerActivated ()
-    {
-        switch scroller.hitPart {
-        case .decrementPage:
-            pageUp()
-            scroller.doubleValue =  scrollPosition
-        case .incrementPage:
-            pageDown()
-            scroller.doubleValue =  scrollPosition
-        case .knob:
-            scroll(toPosition: scroller.doubleValue)
-        case .knobSlot:
-            print ("Scroller .knobSlot clicked")
-        case .noPart:
-            print ("Scroller .noPart clicked")
-        case .decrementLine:
-            print ("Scroller .decrementLine clicked")
-        case .incrementLine:
-            print ("Scroller .incrementLine clicked")
-        default:
-            print ("Scroller: New value introduced")
-        }
-    }
-    
-    
     func setupScroller()
     {
-        let style: NSScroller.Style = .legacy
-        let scrollerWidth = NSScroller.scrollerWidth(for: .regular, scrollerStyle: style)
-        let scrollerFrame = NSRect(x: bounds.maxX - scrollerWidth, y: 0, width: scrollerWidth, height: bounds.height)
-        if scroller == nil {
-            scroller = NSScroller(frame: scrollerFrame)
-        } else {
-            scroller?.frame = scrollerFrame
-        }
-        scroller.autoresizingMask = [.minXMargin, .height]
-        scroller.scrollerStyle = style
-        scroller.knobProportion = 0.1
-        scroller.isEnabled = false
-        addSubview (scroller)
-        scroller.action = #selector(scrollerActivated)
-        scroller.target = self
+        // 스크롤바를 완전히 비활성화
     }
     
     /// This method sents the `nativeForegroundColor` and `nativeBackgroundColor`
@@ -342,12 +301,12 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
      */
     open func getOptimalFrameSize () -> NSRect
     {
-        return NSRect (x: 0, y: 0, width: cellDimension.width * CGFloat(terminal.cols) + scroller.frame.width, height: cellDimension.height * CGFloat(terminal.rows))
+        return NSRect (x: 0, y: 0, width: cellDimension.width * CGFloat(terminal.cols), height: cellDimension.height * CGFloat(terminal.rows))
     }
     
     func getEffectiveWidth (size: CGSize) -> CGFloat
     {
-        return (size.width-scroller.frame.width)
+        return size.width
     }
     
     open func scrolled(source terminal: Terminal, yDisp: Int) {
@@ -378,9 +337,7 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
     
     func updateScroller ()
     {
-        scroller.isEnabled = canScroll
-        scroller.doubleValue = scrollPosition
-        scroller.knobProportion = scrollThumbsize
+        // 스크롤바 없음
     }
     
     var userScrolling = false
