@@ -276,7 +276,22 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
     
     func setupScroller()
     {
-        // 스크롤바를 완전히 비활성화
+        let scrollerWidth = NSScroller.scrollerWidth(for: .regular, scrollerStyle: .legacy)
+        let scrollerFrame = NSRect(x: bounds.maxX - scrollerWidth, y: 0, width: scrollerWidth, height: bounds.height)
+
+        if scroller == nil {
+            scroller = NSScroller(frame: scrollerFrame)
+        } else {
+            scroller?.frame = scrollerFrame
+        }
+
+        scroller.autoresizingMask = [.minXMargin, .height]
+        scroller.scrollerStyle = .legacy
+        scroller.isEnabled = true
+
+        addSubview(scroller)
+        scroller.action = #selector(scrollerActivated)
+        scroller.target = self
     }
     
     /// This method sents the `nativeForegroundColor` and `nativeBackgroundColor`
@@ -301,12 +316,13 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
      */
     open func getOptimalFrameSize () -> NSRect
     {
-        return NSRect (x: 0, y: 0, width: cellDimension.width * CGFloat(terminal.cols), height: cellDimension.height * CGFloat(terminal.rows))
+        let scrollerWidth = scroller?.frame.width ?? NSScroller.scrollerWidth(for: .regular, scrollerStyle: .legacy)
+        return NSRect (x: 0, y: 0, width: cellDimension.width * CGFloat(terminal.cols) + scrollerWidth, height: cellDimension.height * CGFloat(terminal.rows))
     }
     
     func getEffectiveWidth (size: CGSize) -> CGFloat
     {
-        return size.width
+        return size.width - (scroller?.frame.width ?? NSScroller.scrollerWidth(for: .regular, scrollerStyle: .legacy))
     }
     
     open func scrolled(source terminal: Terminal, yDisp: Int) {
@@ -337,7 +353,10 @@ open class TerminalView: NSView, NSTextInputClient, NSUserInterfaceValidations, 
     
     func updateScroller ()
     {
-        // 스크롤바 없음
+        guard terminal != nil else { return }
+        scroller.isEnabled = canScroll
+        scroller.doubleValue = scrollPosition
+        scroller.knobProportion = scrollThumbsize
     }
     
     var userScrolling = false
